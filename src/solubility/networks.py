@@ -3,8 +3,20 @@ from collections import OrderedDict
 import torch
 from torch import nn
 
-import torchgraphs as tg
+import torchgraphs.network.functions as tg
+import torchgraphs.network.linear as tg2
 
+
+"""
+from .network import GraphNetwork
+from .linear import EdgeLinear, NodeLinear, GlobalLinear
+from .aggregation import EdgesToSender, EdgesToReceiver, EdgesToGlobal, NodesToGlobal
+from .functions import \
+    EdgeFunction, NodeFunction, GlobalFunction, \
+    EdgeReLU, NodeReLU, GlobalReLU, \
+    EdgeSigmoid, NodeSigmoid, GlobalSigmoid, \
+    EdgeDropout, NodeDropout, GlobalDropout
+"""
 
 def build_network(num_hidden):
     return SolubilityGN(num_hidden)
@@ -18,18 +30,18 @@ class SolubilityGN(nn.Module):
         hidden_global = hidden_node // 8
         
         self.encoder = nn.Sequential(OrderedDict({
-            'edge': tg.EdgeLinear(hidden_edge, edge_features=6),
+            'edge': tg2.EdgeLinear(hidden_edge, edge_features=6),
             'edge_relu': tg.EdgeReLU(),
-            'node': tg.NodeLinear(hidden_node, node_features=47),
+            'node': tg2.NodeLinear(hidden_node, node_features=47),
             'node_relu': tg.NodeReLU(),
-            'global': tg.GlobalLinear(hidden_global, node_features=hidden_node,
+            'global': tg2.GlobalLinear(hidden_global, node_features=hidden_node,
                                       edge_features=hidden_edge, aggregation=aggregation),
             'global_relu': tg.GlobalReLU(),
         }))
         if dropout:
             self.hidden = nn.Sequential(OrderedDict({
                 f'hidden_{i}': nn.Sequential(OrderedDict({
-                    'edge': tg.EdgeLinear(hidden_edge, edge_features=hidden_edge,
+                    'edge': tg2.EdgeLinear(hidden_edge, edge_features=hidden_edge,
                                           sender_features=hidden_node, bias=hidden_bias),
                     'edge_relu': tg.EdgeReLU(),
                     'edge_dropout': tg.EdgeDroput(),
@@ -47,19 +59,19 @@ class SolubilityGN(nn.Module):
         else:
             self.hidden = nn.Sequential(OrderedDict({
                 f'hidden_{i}': nn.Sequential(OrderedDict({
-                    'edge': tg.EdgeLinear(hidden_edge, edge_features=hidden_edge,
+                    'edge': tg2.EdgeLinear(hidden_edge, edge_features=hidden_edge,
                                           sender_features=hidden_node, bias=hidden_bias),
                     'edge_relu': tg.EdgeReLU(),
-                    'node': tg.NodeLinear(hidden_node, node_features=hidden_node, incoming_features=hidden_edge,
+                    'node': tg2.NodeLinear(hidden_node, node_features=hidden_node, incoming_features=hidden_edge,
                                           aggregation=aggregation, bias=hidden_bias),
                     'node_relu': tg.NodeReLU(),
-                    'global': tg.GlobalLinear(hidden_global, node_features=hidden_node, edge_features=hidden_edge,
+                    'global': tg2.GlobalLinear(hidden_global, node_features=hidden_node, edge_features=hidden_edge,
                                               global_features=hidden_global, aggregation=aggregation, bias=hidden_bias),
                     'global_relu': tg.GlobalReLU(),
                 }))
                 for i in range(num_layers)
             }))
-        self.readout_globals = tg.GlobalLinear(1, global_features=hidden_global, bias=True)
+        self.readout_globals = tg2.GlobalLinear(1, global_features=hidden_global, bias=True)
 
     def forward(self, graphs):
         graphs = self.encoder(graphs)

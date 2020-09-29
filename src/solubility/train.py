@@ -20,7 +20,7 @@ from tensorboardX import SummaryWriter
 
 from saver import Saver
 from utils import git_info, cuda_info, parse_dotted, update_rec, set_seeds, import_, sort_dict, RunningWeightedAverage
-from .dataset import SolubilityDataset
+from solubility.dataset import SolubilityDataset
 
 parser = ArgumentParser()
 parser.add_argument('--experiment', nargs='+', required=True)
@@ -428,3 +428,7 @@ del graphs_df, df_losses_by_node_range, df_worst_solubility_loss_by_node_range
 if logger is not None:
     logger.close()
 # endregion
+
+if __name__ == "__main__":
+    pass
+
